@@ -10,6 +10,6 @@ utilities for cloud development
 - `lambdafx`
 - `post-launch-configs`
 
-`gcp` contains terraform for implementation of GCP project factory
+`gcp` contains terraform for implmentation of GCP project factory
 
 `kubernetes` contains kubectl commands and terraform module
