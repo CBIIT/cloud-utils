@@ -1,0 +1,33 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "cbiitCluster": {
+            "Type": "AWS::ECS::Cluster",
+            "Properties": {
+                "ClusterName": "cluster-name",
+                "ClusterSettings": [
+                    {
+                        "Name": "containerInsights",
+                        "Value": "enabled"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "environment",
+                        "Value": "dev"
+                    },
+                    {
+                        "Key": "project",
+                        "Value": "project-name"
+                    }
+                ]
+            }
+        },
+        "cbiitRepository": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "RepositoryName": "repoName"
+          }
+        }
+    }
+}

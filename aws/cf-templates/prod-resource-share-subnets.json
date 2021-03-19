@@ -1,0 +1,88 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This template create an resource share for NCI Child Accounts.",
+    "Parameters": {
+        "ResourceShareName": {
+            "Description": "Resource Share Name will be the same name as the AWS Child Account Name i.e. NIH.NCI.XXX.XXXX.PROD",
+            "Type": "String",
+            "Default": "NIH.NCI.XXX.XXXX.PROD"
+        },
+        "AccountID": {
+            "Description": "AWS Account ID to associate with the resource share",
+            "Type": "CommaDelimitedList",
+            "Default": "00000000000"
+        },
+        "Project": {
+            "Description": "Name of Project for EC2 Instance",
+            "Type": "String"
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Resource Share Configuration"
+                    },
+                    "Parameters": [
+                        "ResourceShareName",
+                        "AccountID",
+                        "ResourcesARNs"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Resource Share Tags"
+                    },
+                    "Parameters": [
+                        "Project"
+                    ]
+                }
+            ]
+        }
+    },
+    "Resources": {
+        "cbiitChildResourceShare": {
+            "Type": "AWS::RAM::ResourceShare",
+            "Properties": {
+                "Name": {
+                    "Ref": "ResourceShareName"
+                },
+                "AllowExternalPrincipals": false,
+                "ResourceArns": [
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-893ffbd4",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-b9e27cdd",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-4c35f111",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-8de37de9",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-9d9907f9",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-a033f7fd",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-2e35f173",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-6d980609",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-9e9907fa",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-a69608c2",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-ed3efab0",
+                    "arn:aws:ec2:us-east-1:019211168375:subnet/subnet-f334f0ae"
+                ],
+                "Principals": {
+                    "Ref": "AccountID"
+                },
+                "Tags": [
+                    {
+                        "Key": "Project",
+                        "Value": {
+                            "Ref": "Project"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "ResourceShare": {
+            "Description": "Child Resource Share",
+            "Value": {
+                "Ref": "cbiitChildResourceShare"
+            }
+        }
+    }
+}
