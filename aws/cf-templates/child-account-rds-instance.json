@@ -1,0 +1,400 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This template deploys a RDS instance to a VPC in CloudOne for CBSTP Project STAGE Tier.",
+    "Parameters": {
+        "Environment": {
+            "Description": "Environment Tier",
+            "Default": "STAGE",
+            "Type": "String",
+            "AllowedValues": [
+                "STAGE",
+                "PROD"
+            ]
+        },
+        "SubnetIds": {
+            "Description": "Select the list of SubnetIds for the RDS",
+            "Type": "List<AWS::EC2::Subnet::Id>"
+        },
+        "DBName": {
+            "Default": "drupalDB",
+            "Description": "The Database Name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+        "DBNameonConsole": {
+            "Description": "Database Name for Console Identification i.e. dev-project-db",
+            "Type": "String",
+            "Default": "cbstp-stage-db"
+        },
+        "DBUser": {
+            "Description": "The database admin account username, pulled from the Parameter Store",
+            "Type": "AWS::SSM::Parameter::Value<String>",
+            "Default": "/rds/latest/DBUsername"
+        },
+        "DBAllocatedStorage": {
+            "Default": "50",
+            "Description": "Size of the database (GB), Minimum allocated storage for MySQL & Postgres is 20 GB. SqlServer minimum is 200 GB.",
+            "Type": "Number",
+            "MinValue": "20",
+            "MaxValue": "1024",
+            "ConstraintDescription": "must be between 5 and 1024Gb."
+        },
+        "DBInstanceClass": {
+            "Description": "The database instance type",
+            "Type": "String",
+            "Default": "db.t3.medium",
+            "AllowedValues": [
+                "db.t3.micro",
+                "db.t3.small",
+                "db.t3.medium",
+                "db.t3.large",
+                "db.t3.xlarge",
+                "db.t3.2xlarge",
+                "db.m5.large",
+                "db.m5.xlarge",
+                "db.m4.large",
+                "db.m4.xlarge"
+            ],
+            "ConstraintDescription": "must select a valid database instance type."
+        },
+        "DBEngine": {
+            "Description": "Select Database Engine",
+            "Type": "String",
+            "Default": "mysql",
+            "AllowedValues": [
+                "mariadb",
+                "mysql",
+                "postgres",
+                "sqlserver-se"
+            ]
+        },
+        "MySQLCommunity": {
+            "Description": "Select MySQL Version",
+            "Type": "String",
+            "Default": "MySQL 8.0.17",
+            "AllowedValues": [
+                "MySQL 5.7.26",
+                "MySQL 5.7.28",
+                "MySQL 8.0.11",
+                "MySQL 8.0.13",
+                "MySQL 8.0.15",
+                "MySQL 8.0.16",
+                "MySQL 8.0.17"
+            ]
+        },
+        "Function": {
+            "Description": "Specific business function of the larger Project, not Project Name",
+            "Type": "String"
+        },
+        "Created": {
+            "Description": "Creation Date MM-DD-YYYY",
+            "Type": "String",
+            "Default": "MM-DD-YYYY"
+        },
+        "Creator": {
+            "Description": "Name of user launching this template",
+            "Type": "String"
+        },
+        "DOC": {
+            "Description": "The Division, Office or Center of the Business Owner for this system",
+            "Type": "String",
+            "Default": "IITOB"
+        },
+        "FedOwner": {
+            "Description": "The first and last name of the Federal system owner",
+            "Type": "String"
+        },
+        "IC": {
+            "Description": "Institute that owns/sponsors this system",
+            "Type": "String",
+            "Default": "NCI"
+        },
+        "Project": {
+            "Description": "Name of the project for RDS",
+            "Type": "String"
+        },
+        "Runtime": {
+            "Description": "Select Runtime for the EC2 Instance",
+            "Type": "String",
+            "Default": "Office-hours",
+            "AllowedValues": [
+                "Office-hours"
+            ]
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "General Configuration for RDS Instance"
+                    },
+                    "Parameters": [
+                        "Environment",
+                        "SubnetIds",
+                        "DBInstanceClass",
+                        "DBEngine",
+                        "MySQLCommunity",
+                        "DBAllocatedStorage",
+                        "DBNameonConsole",
+                        "DBName",
+                        "DBUser",
+                        "DBPassword"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Required Tags for RDS Instance"
+                    },
+                    "Parameters": [
+                        "Function",
+                        "Created",
+                        "Creator",
+                        "DOC",
+                        "FedOwner",
+                        "FISMA",
+                        "IC",
+                        "Project",
+                        "Runtime"
+                    ]
+                }
+            ]
+        }
+    },
+    "Conditions": {
+        "dbEnv": {
+            "Fn::Or": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "Environment"
+                        },
+                        "DEV"
+                    ]
+                },
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "Environment"
+                        },
+                        "QA"
+                    ]
+                },
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "Environment"
+                        },
+                        "STAGE"
+                    ]
+                }
+            ]
+        }
+    },
+    "Resources": {
+        "rdsSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow all traffic from nihnet",
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "10.208.0.0/21",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "10.128.0.0/9",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "10.133.0.0/16",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "128.231.0.0/16",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "129.43.0.0/16",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "130.14.0.0/16",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "137.187.0.0/16",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "156.40.0.0/16",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "157.98.0.0/16",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    },
+                    {
+                        "CidrIp": "165.112.0.0/16",
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306
+                    }
+                ],
+                "VpcId": "vpc-c29e1dba"
+            }
+        },
+        "rdsDBSubnetGroup": {
+            "Type": "AWS::RDS::DBSubnetGroup",
+            "Properties": {
+                "DBSubnetGroupDescription": {
+                    "Fn::Sub": [
+                        "DB's Subnet IDs for ${Environment}",
+                        {
+                            "Environment": {
+                                "Ref": "Environment"
+                            }
+                        }
+                    ]
+                },
+                "DBSubnetGroupName": "stage-db-subnet-group",
+                "SubnetIds": {
+                    "Ref": "SubnetIds"
+                }
+            }
+        },
+        "rdsInstance": {
+            "Type": "AWS::RDS::DBInstance",
+            "Properties": {
+                "DBName": {
+                    "Ref": "DBName"
+                },
+                "AllocatedStorage": {
+                    "Ref": "DBAllocatedStorage"
+                },
+                "DBInstanceClass": {
+                    "Ref": "DBInstanceClass"
+                },
+                "DBSubnetGroupName": "stage-db-subnet-group",
+                "Engine": {
+                    "Ref": "DBEngine"
+                },
+                "EngineVersion": "8.0.17",
+                "MasterUsername": {
+                    "Ref": "DBUser"
+                },
+                "MasterUserPassword": "{{resolve:ssm-secure:rdsMasterUserPassword:1}}",
+                "DBInstanceIdentifier": {
+                    "Ref": "DBNameonConsole"
+                },
+                "VPCSecurityGroups": [
+                    {
+                        "Fn::GetAtt": [
+                            "rdsSecurityGroup",
+                            "GroupId"
+                        ]
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "DBNameonConsole"
+                        }
+                    },
+                    {
+                        "Key": "Function",
+                        "Value": {
+                            "Ref": "Function"
+                        }
+                    },
+                    {
+                        "Key": "Created",
+                        "Value": {
+                            "Ref": "Created"
+                        }
+                    },
+                    {
+                        "Key": "Creator",
+                        "Value": {
+                            "Ref": "Creator"
+                        }
+                    },
+                    {
+                        "Key": "DOC",
+                        "Value": {
+                            "Ref": "DOC"
+                        }
+                    },
+                    {
+                        "Key": "Environment Tier",
+                        "Value": {
+                            "Ref": "Environment"
+                        }
+                    },
+                    {
+                        "Key": "Federal System Owner",
+                        "Value": {
+                            "Ref": "FedOwner"
+                        }
+                    },
+                    {
+                        "Key": "IC",
+                        "Value": {
+                            "Ref": "IC"
+                        }
+                    },
+                    {
+                        "Key": "Project",
+                        "Value": {
+                            "Ref": "Project"
+                        }
+                    },
+                    {
+                        "Key": "Runtime",
+                        "Value": {
+                            "Fn::If": [
+                                "dbEnv",
+                                {
+                                    "Ref": "Runtime"
+                                },
+                                {
+                                    "Ref": "AWS::NoValue"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "DeletionPolicy": "Snapshot"
+        }
+    },
+    "Outputs": {
+        "NciDB": {
+            "Description": "CBSTP RDS",
+            "Value": {
+                "Ref": "DBNameonConsole"
+            }
+        }
+    }
+}
