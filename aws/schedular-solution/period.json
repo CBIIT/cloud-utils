@@ -1,0 +1,22 @@
+{
+  "begintime": {
+    "S": "07:00"
+  },
+  "description": {
+    "S": "NCI Office hours - Period"
+  },
+  "endtime": {
+    "S": "19:00"
+  },
+  "name": {
+    "S": "NCI-office-hours"
+  },
+  "type": {
+    "S": "period"
+  },
+  "weekdays": {
+    "SS": [
+      "mon-fri"
+    ]
+  }
+}

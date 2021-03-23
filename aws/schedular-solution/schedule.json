@@ -1,0 +1,19 @@
+{
+  "description": {
+    "S": "NCI Office hours (Eastern)"
+  },
+  "name": {
+    "S": "office-hours"
+  },
+  "periods": {
+    "SS": [
+      "NCI-office-hours"
+    ]
+  },
+  "timezone": {
+    "S": "US/Eastern"
+  },
+  "type": {
+    "S": "schedule"
+  }
+}
