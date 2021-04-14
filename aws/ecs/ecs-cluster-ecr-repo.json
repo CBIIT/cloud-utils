@@ -27,6 +27,9 @@
           "Type": "AWS::ECR::Repository",
           "Properties": {
             "RepositoryName": "repoName"
+          },
+            "ImageScanningConfiguration" : {
+            "ScanOnPush": "true"
           }
         }
     }
