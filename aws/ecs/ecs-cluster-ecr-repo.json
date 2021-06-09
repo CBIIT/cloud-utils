@@ -26,7 +26,10 @@
         "cbiitRepository": {
           "Type": "AWS::ECR::Repository",
           "Properties": {
-            "RepositoryName" : "repository-name"
+            "RepositoryName" : "repository-name",
+            "ImageScanningConfiguration" : {
+              "ScanOnPush": "true"
+            }
           }
         }
     }
