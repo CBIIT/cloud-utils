@@ -1,22 +1,27 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "This template deploys a RDS instance to a VPC in CloudOne for CBSTP Project STAGE Tier.",
+    "Description": "This template deploys a RDS instance to a VPC in the Cloud One Environment.",
     "Parameters": {
         "Environment": {
             "Description": "Environment Tier",
-            "Default": "STAGE",
+            "Default": "DEV",
             "Type": "String",
             "AllowedValues": [
+                "DEV",
+                "TEST",
                 "STAGE",
                 "PROD"
             ]
+        },
+        "VPC": {
+            "Description": "Select VPC ID for EC2 Instance",
+            "Type": "AWS::EC2::VPC::Id"
         },
         "SubnetIds": {
             "Description": "Select the list of SubnetIds for the RDS",
             "Type": "List<AWS::EC2::Subnet::Id>"
         },
         "DBName": {
-            "Default": "drupalDB",
             "Description": "The Database Name",
             "Type": "String",
             "MinLength": "1",
@@ -27,7 +32,7 @@
         "DBNameonConsole": {
             "Description": "Database Name for Console Identification i.e. dev-project-db",
             "Type": "String",
-            "Default": "cbstp-stage-db"
+            "Default": "<projectname>-<tier>-db"
         },
         "DBUser": {
             "Description": "The database admin account username, pulled from the Parameter Store",
@@ -101,10 +106,10 @@
         "DOC": {
             "Description": "The Division, Office or Center of the Business Owner for this system",
             "Type": "String",
-            "Default": "IITOB"
+            "Default": "CBIIT"
         },
-        "FedOwner": {
-            "Description": "The first and last name of the Federal system owner",
+        "FederalSystemOwner": {
+            "Description": "The first and last name of the Federal system owner.",
             "Type": "String"
         },
         "IC": {
@@ -261,7 +266,9 @@
                         "ToPort": 3306
                     }
                 ],
-                "VpcId": "vpc-c29e1dba"
+                "VpcId": {
+                    "Ref": "VPC"
+                }
             }
         },
         "rdsDBSubnetGroup": {
@@ -355,7 +362,7 @@
                     {
                         "Key": "Federal System Owner",
                         "Value": {
-                            "Ref": "FedOwner"
+                            "Ref": "FederalSystemOwner"
                         }
                     },
                     {
@@ -390,8 +397,8 @@
         }
     },
     "Outputs": {
-        "NciDB": {
-            "Description": "CBSTP RDS",
+        "cbiitRDS": {
+            "Description": "Project RDS",
             "Value": {
                 "Ref": "DBNameonConsole"
             }
