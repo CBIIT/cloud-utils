@@ -26,7 +26,7 @@
         "cbiitRepository": {
           "Type": "AWS::ECR::Repository",
           "Properties": {
-            "RepositoryName": "repoName"
+            "RepositoryName" : "repository-name"
           }
         }
     }
