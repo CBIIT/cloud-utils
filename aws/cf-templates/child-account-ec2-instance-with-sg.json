@@ -1,0 +1,333 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This template deploys EC2 isntances for Cloud One project\n",
+    "Parameters": {
+        "Environment": {
+            "Description": "Environment",
+            "Type": "String",
+            "AllowedValues": [
+                "DEV",
+                "TEST",
+                "STAGE",
+                "PROD"
+            ]
+        },
+        "VPC":{
+            "Description": "Select VPC ID for EC2 Instance",
+            "Type": "AWS::EC2::VPC::Id"
+        },
+        "Subnet": {
+            "Description": "Select SubnetId for EC2 Instance",
+            "Type": "AWS::EC2::Subnet::Id"
+        },
+        "AMI": {
+            "Description": "Select AMI ID for EC2 Instance",
+            "Type": "AWS::EC2::Image::Id"
+        }, 
+        "InstanceType": {
+            "Description": "Select the EC2 Instance Type",
+            "Type": "String",
+            "AllowedValues": [
+                "t3.nano",
+                "t3.micro",
+                "t3.small",
+                "t3.medium",
+                "t3.large",
+                "t3.xlarge",
+                "t3.2xlarge",
+                "m5.large",
+                "m5.xlarge",
+                "m5.2xlarge",
+                "m5.4xlarge",
+                "m5.8xlarge"
+            ]
+        },
+        "SecurityGroup": {
+            "Description": "Select Security Group IDs for EC2 Instance",
+            "Type": "List<AWS::EC2::SecurityGroup::Id>"
+        },
+        "KeyPair": {
+            "Description": "Select Key Pair for EC2 Instance",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        },
+        "Name": {
+            "Description": "Name of the EC2 Instance; follows NCI naming convention nciws-p1234",
+            "Type": "String",
+            "AllowedPattern": ".+",
+            "Default": "nciws-xxxxx"
+        },
+        "Function": {
+            "Description": "Specific business function of the larger project, not the project name",
+            "Type": "String"
+        },
+        "Created": {
+            "Description": "Creation Date MM-DD-YYYY",
+            "Type": "String",
+            "Default": "mm-dd-yyyy"
+        },
+        "Creator": {
+            "Description": "Name of user launching this template",
+            "Type": "String"
+        },
+        "DOC": {
+            "Description": "Division, Office, or Center of the Business Owner for this system.",
+            "Type": "String",
+            "Default": "CBIIT"
+        },
+        "FederalSystemOwner": {
+            "Description": "The first and last name of the Federal system owner.",
+            "Type": "String"
+        },
+        "OS": {
+            "Description": "Operating system of the EC2 instance.",
+            "Type": "String",
+            "AllowedValues": [
+                "CentOS 7.x,",
+                "RHEL7",
+                "Window 2012",
+                "Window 2016"
+            ]
+        },
+        "IC": {
+            "Description": "The Institute that owns/sponsors this system.",
+            "Type": "String",
+            "Default": "NCI"
+        },
+        "PatchGroup": {
+            "Description": "Assigned Patch Group for EC2 Instance.",
+            "Type": "String",
+            "AllowedValues": [
+                "Non-Prod",
+                "Prod"
+            ]
+        },
+        "Project": {
+            "Description": "Project name that may span multiple systems; This may also be the business service provided by this system.",
+            "Type": "String"
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "General Configuration for EC2 Instance"
+                    },
+                    "Parameters": [
+                        "Environment",
+                        "VPC",
+                        "Subnet",
+                        "AMI",
+                        "InstanceType",
+                        "SecurityGroup",
+                        "KeyPair"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Required Tags for EC2 Instance"
+                    },
+                    "Parameters": [
+                        "Name",
+                        "Function",
+                        "Created",
+                        "Creator",
+                        "DOC",
+                        "FederalSystemOwner",
+                        "OS",
+                        "IC",
+                        "PatchGroup",
+                        "Project"
+                    ]
+                }
+            ]
+        }
+    },
+    "Resources": {
+        "amazonlinux2Parameter": {
+            "Type": "AWS::SSM::Parameter",
+            "Properties": {
+                "Name": "/ami/latest/us-east-1/amazonlinux2",
+                "Type": "String",
+                "Value": "ami-0aeeebd8d2ab47354"
+            }
+        },
+        "nihnetSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "Security Group to Identfy",
+                            {
+                                "Ref": "Environment"
+                            },
+                            {
+                                "Ref": "Project"
+                            },
+                            " EC2 Instances"
+                        ]
+                    ]
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "137.187.0.0/16"
+                    },
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "10.133.0.0/16"
+                    },
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "165.112.0.0/16"
+                    },
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "130.14.0.0/16"
+                    },
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "128.231.0.0/16"
+                    },
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "10.208.0.0/9"
+                    },
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "157.98.0.0/16"
+                    },
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "156.40.0.0/26"
+                    },
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "129.43.0.0/16"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "ec2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyPair"
+                },
+                "SecurityGroupIds": {
+                    "Ref": "SecurityGroup"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet"
+                },
+                "IamInstanceProfile": "ec2-role-ssm-cloudwatch-access",
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Sub": "#!/bin/bash\n# set debug mode\nset -x\n\n#output log of ec2 userdata to /var/log/user-data.log\nexec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\n# create and put some content in the file\ntouch /home/centos/apphost_ec2_userdata.txt\n(\ncat << 'EOP'\nHey there AppHosting Team debug verification file!!!\nEOP\n) > /home/centos/apphost_ec2_userdata.txt\n\n#Checking if Ansible is presnt\ncommand -v ansible >/dev/null 2>&1 ||\n{ echo >&2 \"Ansible is not installed. Installing..\";\nsudo pip install --upgrade pip\nsudo pip install ansible\n#sudo pip install git+https://github.com/ansible/ansible.git@devel\nsudo pip install boto3\n#sudo pip install botocore\nansible --version\n}\n#Checking if git is presnt\ncommand -v git >/dev/null 2>&1 ||\n{ echo >&2 \"Git is not installed. Installing..\";\nsudo yum -y install git git-svn\n}\nhostnamectl set-hostname --static ${Name}.nci.nih.gov\nhostname\nmkdir -p /tmp/run-ansible\ncd /tmp/run-ansible\nwget https://ncirepohub.nci.nih.gov/nexus/repository/raw-cbiit-private-hosted/cbiit/centoslinuxec2.tar\ntar xf centoslinuxec2.tar\nansible-playbook configure-centos-site.yml --extra-var \"hostname=${Name} tier=${Environment}\"\nsleep 60\nrm -rf centoslinuxec2.tar\n"
+                    }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "Name"
+                        }
+                    },
+                    {
+                        "Key": "Function",
+                        "Value": {
+                            "Ref": "Function"
+                        }
+                    },
+                    {
+                        "Key": "backup",
+                        "Value": "required"
+                    },
+                    {
+                        "Key": "Created",
+                        "Value": {
+                            "Ref": "Created"
+                        }
+                    },
+                    {
+                        "Key": "Creator",
+                        "Value": {
+                            "Ref": "Creator"
+                        }
+                    },
+                    {
+                        "Key": "DOC",
+                        "Value": {
+                            "Ref": "DOC"
+                        }
+                    },
+                    {
+                        "Key": "Environment Tier",
+                        "Value": {
+                            "Ref": "Environment"
+                        }
+                    },
+                    {
+                        "Key": "Federal System Owner",
+                        "Value": {
+                            "Ref": "FederalSystemOwner"
+                        }
+                    },
+                    {
+                        "Key": "OS",
+                        "Value": {
+                            "Ref": "OS"
+                        }
+                    },
+                    {
+                        "Key": "IC",
+                        "Value": {
+                            "Ref": "IC"
+                        }
+                    },
+                    {
+                        "Key": "Patch Group",
+                        "Value": {
+                            "Ref" : "PatchGroup"
+                        }
+                    },
+                    {
+                        "Key": "Project",
+                        "Value": {
+                            "Ref": "Project"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
