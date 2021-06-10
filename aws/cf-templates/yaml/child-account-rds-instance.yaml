@@ -1,20 +1,27 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: >-
-  This template deploys a RDS instance to a VPC in CloudOne for CBSTP Project
-  STAGE Tier.
+Description: This template deploys a RDS instance to a VPC in the Cloud One Environment.
 Parameters:
   Environment:
     Description: Environment Tier
-    Default: STAGE
+    Default: DEV
     Type: String
     AllowedValues:
+      - DEV
+      - TEST
       - STAGE
       - PROD
+  VPC:
+    Description: Select VPC ID for EC2 Instance
+    Type: 'AWS::EC2::VPC::Id'
   SubnetIds:
     Description: Select the list of SubnetIds for the RDS
     Type: 'List<AWS::EC2::Subnet::Id>'
+  DBSubnetGroupName:
+    Description: >-
+      The name for the DB subnet group. This value is stored as a lowercase
+      string, i.e. dev-db-subnet-group
+    Type: String
   DBName:
-    Default: drupalDB
     Description: The Database Name
     Type: String
     MinLength: '1'
@@ -24,7 +31,6 @@ Parameters:
   DBNameonConsole:
     Description: Database Name for Console Identification i.e. dev-project-db
     Type: String
-    Default: cbstp-stage-db
   DBUser:
     Description: 'The database admin account username, pulled from the Parameter Store'
     Type: 'AWS::SSM::Parameter::Value<String>'
@@ -88,9 +94,9 @@ Parameters:
   DOC:
     Description: 'The Division, Office or Center of the Business Owner for this system'
     Type: String
-    Default: IITOB
-  FedOwner:
-    Description: The first and last name of the Federal system owner
+    Default: CBIIT
+  FederalSystemOwner:
+    Description: The first and last name of the Federal system owner.
     Type: String
   IC:
     Description: Institute that owns/sponsors this system
@@ -112,7 +118,9 @@ Metadata:
           default: General Configuration for RDS Instance
         Parameters:
           - Environment
+          - VPC
           - SubnetIds
+          - DBSubnetGroupName
           - DBInstanceClass
           - DBEngine
           - MySQLCommunity
@@ -128,20 +136,20 @@ Metadata:
           - Created
           - Creator
           - DOC
-          - FedOwner
+          - FederalSystemOwner
           - FISMA
           - IC
           - Project
           - Runtime
 Conditions:
-  dbEnv: !Or
-    - !Equals
+  dbEnv: !Or 
+    - !Equals 
       - !Ref Environment
       - DEV
-    - !Equals
+    - !Equals 
       - !Ref Environment
       - QA
-    - !Equals
+    - !Equals 
       - !Ref Environment
       - STAGE
 Resources:
@@ -190,14 +198,14 @@ Resources:
           IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-      VpcId: vpc-c29e1dba
+      VpcId: !Ref VPC
   rdsDBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
-      DBSubnetGroupDescription: !Sub
+      DBSubnetGroupDescription: !Sub 
         - 'DB''s Subnet IDs for ${Environment}'
         - Environment: !Ref Environment
-      DBSubnetGroupName: stage-db-subnet-group
+      DBSubnetGroupName: !Ref DBSubnetGroupName
       SubnetIds: !Ref SubnetIds
   rdsInstance:
     Type: 'AWS::RDS::DBInstance'
@@ -205,14 +213,14 @@ Resources:
       DBName: !Ref DBName
       AllocatedStorage: !Ref DBAllocatedStorage
       DBInstanceClass: !Ref DBInstanceClass
-      DBSubnetGroupName: stage-db-subnet-group
+      DBSubnetGroupName: !Ref DBSubnetGroupName
       Engine: !Ref DBEngine
       EngineVersion: 8.0.17
       MasterUsername: !Ref DBUser
       MasterUserPassword: '{{resolve:ssm-secure:rdsMasterUserPassword:1}}'
       DBInstanceIdentifier: !Ref DBNameonConsole
       VPCSecurityGroups:
-        - !GetAtt
+        - !GetAtt 
           - rdsSecurityGroup
           - GroupId
       Tags:
@@ -229,18 +237,18 @@ Resources:
         - Key: Environment Tier
           Value: !Ref Environment
         - Key: Federal System Owner
-          Value: !Ref FedOwner
+          Value: !Ref FederalSystemOwner
         - Key: IC
           Value: !Ref IC
         - Key: Project
           Value: !Ref Project
         - Key: Runtime
-          Value: !If
+          Value: !If 
             - dbEnv
             - !Ref Runtime
             - !Ref 'AWS::NoValue'
     DeletionPolicy: Snapshot
 Outputs:
-  NciDB:
-    Description: CBSTP RDS
+  cbiitRDS:
+    Description: Project RDS
     Value: !Ref DBNameonConsole

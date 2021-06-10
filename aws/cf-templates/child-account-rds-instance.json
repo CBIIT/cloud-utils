@@ -21,6 +21,10 @@
             "Description": "Select the list of SubnetIds for the RDS",
             "Type": "List<AWS::EC2::Subnet::Id>"
         },
+        "DBSubnetGroupName": {
+            "Description": "The name for the DB subnet group. This value is stored as a lowercase string, i.e. dev-db-subnet-group",
+            "Type": "String"
+        },
         "DBName": {
             "Description": "The Database Name",
             "Type": "String",
@@ -31,8 +35,7 @@
         },
         "DBNameonConsole": {
             "Description": "Database Name for Console Identification i.e. dev-project-db",
-            "Type": "String",
-            "Default": "<projectname>-<tier>-db"
+            "Type": "String"
         },
         "DBUser": {
             "Description": "The database admin account username, pulled from the Parameter Store",
@@ -139,7 +142,9 @@
                     },
                     "Parameters": [
                         "Environment",
+                        "VPC",
                         "SubnetIds",
+                        "DBSubnetGroupName",
                         "DBInstanceClass",
                         "DBEngine",
                         "MySQLCommunity",
@@ -159,7 +164,7 @@
                         "Created",
                         "Creator",
                         "DOC",
-                        "FedOwner",
+                        "FederalSystemOwner",
                         "FISMA",
                         "IC",
                         "Project",
@@ -284,7 +289,9 @@
                         }
                     ]
                 },
-                "DBSubnetGroupName": "stage-db-subnet-group",
+                "DBSubnetGroupName": {
+                    "Ref": "DBSubnetGroupName"
+                },
                 "SubnetIds": {
                     "Ref": "SubnetIds"
                 }
@@ -302,7 +309,9 @@
                 "DBInstanceClass": {
                     "Ref": "DBInstanceClass"
                 },
-                "DBSubnetGroupName": "stage-db-subnet-group",
+                "DBSubnetGroupName": {
+                    "Ref": "DBSubnetGroupName"
+                },
                 "Engine": {
                     "Ref": "DBEngine"
                 },
