@@ -42,10 +42,6 @@
                 "m5.8xlarge"
             ]
         },
-        "SecurityGroup": {
-            "Description": "Select Security Group IDs for EC2 Instance",
-            "Type": "List<AWS::EC2::SecurityGroup::Id>"
-        },
         "KeyPair": {
             "Description": "Select Key Pair for EC2 Instance",
             "Type": "AWS::EC2::KeyPair::KeyName"
@@ -119,7 +115,6 @@
                         "Subnet",
                         "AMI",
                         "InstanceType",
-                        "SecurityGroup",
                         "KeyPair"
                     ]
                 },
@@ -144,14 +139,6 @@
         }
     },
     "Resources": {
-        "amazonlinux2Parameter": {
-            "Type": "AWS::SSM::Parameter",
-            "Properties": {
-                "Name": "/ami/latest/us-east-1/amazonlinux2",
-                "Type": "String",
-                "Value": "ami-0aeeebd8d2ab47354"
-            }
-        },
         "nihnetSG": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
@@ -243,9 +230,14 @@
                 "KeyName": {
                     "Ref": "KeyPair"
                 },
-                "SecurityGroupIds": {
-                    "Ref": "SecurityGroup"
-                },
+                "SecurityGroupIds": [
+                    {
+                        "Fn::GetAtt": [
+                            "nihnetSG",
+                            "GroupId"
+                        ]
+                    }
+                ],
                 "SubnetId": {
                     "Ref": "Subnet"
                 },

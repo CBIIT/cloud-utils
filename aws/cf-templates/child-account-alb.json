@@ -1,0 +1,201 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This template deploys an ALB for project Production Tier Environment.\n",
+    "Parameters": {
+        "Environment": {
+            "Description": "Environment",
+            "Type": "String",
+            "Default": "STAGE",
+            "AllowedValues": [
+                "DEV",
+                "QA",
+                "STAGE",
+                "PROD"
+            ]
+        },
+        "Name": {
+            "Description": "Name of the ALB, i.e. project-dev-alb",
+            "Type": "String"
+        }, 
+        "VPC":{
+            "Description": "Select VPC ID for ALB",
+            "Type": "AWS::EC2::VPC::Id"
+        },
+        "SubnetIds": {
+            "Description": "Select the list of SubnetIds for the ALB",
+            "Type": "List<AWS::EC2::Subnet::Id>"
+        },
+        "EC2Instance": {
+            "Description": "Select the EC2 instance ID for the target group behind the ALB",
+            "Type": "AWS::EC2::Instance::Id"
+        },
+        "SecurityGroup": {
+            "Description": "Select Security Group IDs for ALB",
+            "Type": "List<AWS::EC2::SecurityGroup::Id>"
+        },
+        "NCICertArn": {
+            "Description": "SSL Certificate ARN for *.cancer.gov or nci.nih.gov",
+            "Type": "String",
+            "Default": "arn:"
+        }
+    },
+    "Resources": {
+        "ApplicationLoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+            "Properties": {
+                "IpAddressType": "ipv4",
+                "Subnets": {
+                    "Ref": "SubnetIds"
+                },
+                "SecurityGroups": {
+                    "Ref": "SecurityGroup"
+                },
+                "Scheme": "internet-facing",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "Name"
+                        }
+                    }
+                ]
+            }
+        },
+        "DefaultHttpsTargetGroup": {
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+            "Properties": {
+                "Port": 443,
+                "Protocol": "HTTPS",
+                "Targets": [
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance"
+                        },
+                        "Port": 443
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "LoadBalancerHttpListener": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "Properties": {
+                "LoadBalancerArn": {
+                    "Ref": "ApplicationLoadBalancer"
+                },
+                "Port": 80,
+                "Protocol": "HTTP",
+                "DefaultActions": [
+                    {
+                        "Type": "redirect",
+                        "RedirectConfig": {
+                            "Protocol": "HTTPS",
+                            "Port": 443,
+                            "Host": "#{host}",
+                            "Path": "/#{path}",
+                            "Query": "#{query}",
+                            "StatusCode": "HTTP_301"
+                        }
+                    }
+                ]
+            }
+        },
+        "LoadBalancerHttpsListener": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "Properties": {
+                "Certificates": [
+                    {
+                        "CertificateArn": {
+                            "Ref": "NCICertArn"
+                        }
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ApplicationLoadBalancer"
+                },
+                "Port": 443,
+                "Protocol": "HTTPS",
+                "DefaultActions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "DefaultHttpsTargetGroup"
+                        }
+                    }
+                ]
+            }
+        },
+        "LoadBalancerCancerCerts": {
+            "Type": "AWS::ElasticLoadBalancingV2::ListenerCertificate",
+            "Properties": {
+                "Certificates": [
+                    {
+                        "CertificateArn": {
+                            "Ref": "NCICertArn"
+                        }
+                    }
+                ],
+                "ListenerArn": {
+                    "Ref": "LoadBalancerHttpsListener"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "AlbArn": {
+            "Description": "Arn to the Application Load Balancer",
+            "Value": {
+                "Ref": "ApplicationLoadBalancer"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-ALB-ARN"
+                }
+            }
+        },
+        "AlbDns": {
+            "Description": "DNS to the Application Load Balancer",
+            "Value": {
+                "Fn::GetAtt": [
+                    "ApplicationLoadBalancer",
+                    "DNSName"
+                ]
+            }
+        },
+        "DefaultHttpsTargetGroup": {
+            "Description": "Default Target Group",
+            "Value": {
+                "Ref": "DefaultHttpsTargetGroup"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-alb-default"
+                }
+            }
+        },
+        "HTTPListener": {
+            "Description": "HTTP Listener",
+            "Value": {
+                "Ref": "LoadBalancerHttpListener"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-http-listener"
+                }
+            }
+        },
+        "HTTPSListener": {
+            "Description": "HTTPS Listener",
+            "Value": {
+                "Ref": "LoadBalancerHttpsListener"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-https-listener"
+                }
+            }
+        }
+    }
+}
