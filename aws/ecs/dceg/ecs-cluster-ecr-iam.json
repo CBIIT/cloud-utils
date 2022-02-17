@@ -1,0 +1,147 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "Environment": {
+            "Description": "Environment",
+            "Type": "String",
+            "Default": "dev",
+            "AllowedValues": [
+                "dev",
+                "qa",
+                "stage",
+                "prod"
+            ]
+        },
+        "ClusterName": {
+            "Description": "Name of the ECS Cluster",
+            "Type": "String",
+            "AllowedPattern": ".+",
+            "Default": "projectname-cluster"
+        },
+        "RepoName": {
+            "Description": "Name of the ECR Repo",
+            "Type": "String",
+            "AllowedPattern": ".+",
+            "Default": "application-containername"
+        },
+        "Project": {
+            "Description": "Project name that may span multiple systems; This may also be the business service provided by this system.",
+            "Type": "String"
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "General Configuration for ECS and ECR"
+                    },
+                    "Parameters": [
+                        "ClusterName",
+                        "RepoName",
+                        "Project",
+                        "Environment"
+                    ]
+                }
+            ]
+        }
+    },
+    "Resources": {
+        "ecsCluster": {
+            "Type": "AWS::ECS::Cluster",
+            "Properties": {
+                "ClusterName": {"Ref": "ClusterName"},
+                "ClusterSettings": [
+                    {
+                        "Name": "containerInsights",
+                        "Value": "enabled"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Environment Tier",
+                        "Value": {
+                            "Ref": "Environment"
+                        }
+                    },
+                    {
+                        "Key": "Project",
+                        "Value": {
+                            "Ref": "Project"
+                        }
+                    }
+
+                ]
+            }
+        },
+        "ecsTaskExecutionIamRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {
+                            "Service": "ecs-tasks.amazonaws.com" 
+                        },
+						"Action": "sts:AssumeRole"
+					}]
+				},
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "ecs-task-execution-policy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "ssm:PutParameter",
+                                        "ssm:GetParametersByPath",
+                                        "ssm:GetParameterHistory",
+                                        "ssm:GetParameters",
+                                        "ssm:GetParameter",
+                                        "ssm:DeleteParameters",
+                                        "ssm:DeleteParameter",
+                                        "ssm:DescribeParameters"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "arn:aws:ssm:*:*:parameter*",
+                                    "Sid": "SSMParameterStorePermissions"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+                ],
+                "RoleName": "AmazonECSTaskExecutionRole"
+			}
+		},
+        "ecrRepo": {
+            "Type": "AWS::ECR::Repository",
+            "Properties": {
+                "RepositoryName": {"Ref": "RepoName"},
+                "ImageScanningConfiguration" : {
+                    "ScanOnPush": "true"
+                },
+                "Tags": [
+                    {
+                        "Key": "Environment Tier",
+                        "Value": {
+                            "Ref": "Environment"
+                        }
+                    },
+                    {
+                        "Key": "Project",
+                        "Value": {
+                            "Ref": "Project"
+                        }
+                    }
+
+                ]
+            }
+        }
+    }
+}
