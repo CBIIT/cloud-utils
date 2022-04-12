@@ -217,7 +217,7 @@
                         "IpProtocol": -1,
                         "FromPort": -1,
                         "ToPort": -1,
-                        "CidrIp": "156.40.0.0/26"
+                        "CidrIp": "156.40.0.0/16"
                     },
                     {
                         "IpProtocol": -1,

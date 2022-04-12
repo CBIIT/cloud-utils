@@ -5,7 +5,6 @@ Parameters:
   Environment:
     Description: Environment
     Type: String
-    Default: TEST
     AllowedValues:
       - DEV
       - TEST
@@ -18,8 +17,8 @@ Parameters:
     Description: Select SubnetId for EC2 Instance
     Type: 'AWS::EC2::Subnet::Id'
   AMI:
-    Description: Select SSM Parameter for AMI of EC2 Instance
-    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Description: Select AMI ID for EC2 Instance
+    Type: 'AWS::EC2::Image::Id'
     Default: /ami/latest/us-east-1/centos
     AllowedValues:
       - /ami/latest/us-east-1/centos
@@ -207,7 +206,7 @@ Resources:
 
           hostname
 
-          sleep 60
+          sudo systemctl reboot
           
       Tags:
         - Key: Name
